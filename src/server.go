@@ -13,5 +13,6 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 	e.GET("/api", apis.Fetchcall)
+	e.GET("/users/:lat/:long", apis.UserResults)
 	e.Logger.Fatal(e.Start("localhost:1323"))
 }
