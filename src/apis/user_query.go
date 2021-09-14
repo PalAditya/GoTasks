@@ -23,12 +23,24 @@ type Address struct {
 	X     map[string]interface{} `json:"-"`
 }
 
+type StateNotFound struct {
+	State   string `json:"state"`
+	Message string `json:"message"`
+}
+
 type MongoResponse struct {
 	Region      []Regional `bson:"res"`
 	LastUpdated string     `bson:"lastUpdated"`
 	ModifiedAt  string     `bson:"modifiedAt"`
 	RecordDate  string     `bson:"recordDate"`
-	Summary     Summary    `bson:"summary"`
+	Summary     DBSummary  `bson:"summary"`
+}
+
+type UserResponse struct {
+	State             string `json:"state"`
+	TotalCasesByState int64  `json:"totalCasesByState"`
+	TotalCasesInIndia int64  `json:"totalCasesInIndia"`
+	LastUpdated       string `json:"lastUpdated"`
 }
 
 func FindLatestDoc() (result MongoResponse, e error) {
@@ -45,13 +57,12 @@ func FindLatestDoc() (result MongoResponse, e error) {
 	return record[0], err
 }
 
-func UserResults(c echo.Context) error {
+func LocResults(c echo.Context) error {
 	client := &http.Client{}
 	lat := c.Param("lat")
 	long := c.Param("long")
-	fmt.Println("https://us1.locationiq.com/v1/reverse.php?key=pk.06c68e4b509f2a73643305e760c488eb&lat=" + lat + "&lon=" + long + "&format=json")
 
-	req, err := http.NewRequest("GET", "https://us1.locationiq.com/v1/reverse.php?key=pk.06c68e4b509f2a73643305e760c488eb&lat="+lat+"&lon="+long+"&format=json", nil)
+	req, err := http.NewRequest("GET", "https://us1.locationiq.com/v1/reverse.php?key=KEY&lat="+lat+"&lon="+long+"&format=json", nil)
 	if err != nil {
 		fmt.Print(err.Error())
 	}
@@ -68,7 +79,6 @@ func UserResults(c echo.Context) error {
 	}
 	var responseObject GeoResponse
 	json.Unmarshal(bodyBytes, &responseObject)
-	fmt.Println(responseObject)
 
 	res, err := FindLatestDoc()
 
@@ -76,11 +86,12 @@ func UserResults(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	} else {
 		for _, element := range res.Region {
-			fmt.Println(element)
 			if element.Loc == responseObject.Address.State {
-				return c.JSON(http.StatusOK, element)
+
+				return c.JSON(http.StatusOK, UserResponse{element.Loc,
+					element.Indiancases, res.Summary.Total, res.LastUpdated})
 			}
 		}
 	}
-	return c.JSON(http.StatusNotFound, bson.D{{"state", "Not Found"}})
+	return c.JSON(http.StatusNotFound, StateNotFound{responseObject.Address.State, "Not Found"})
 }

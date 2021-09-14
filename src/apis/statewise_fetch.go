@@ -28,6 +28,15 @@ type Data struct {
 	X        map[string]interface{} `json:"-"`
 }
 
+type DBSummary struct {
+	Total      int64 `json:"total"`
+	Discharged int64 `json:"discharged"`
+}
+
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
 type Summary struct {
 	Indiancases int64                  `json:"confirmedCasesIndian"`
 	Discharged  int64                  `json:"discharged"`
@@ -89,13 +98,14 @@ func Fetchcall(c echo.Context) error {
 		{"lastUpdated", responseObject.LastRefreshed},            //Server update time for API
 		{"modifiedAt", time.Now().Format("2006-01-02 15:04:05")}, //last time we updated data on DB
 		{"recordDate", today},                                    //While not needed, we will store each day's records separately
-		{"summary", bson.D{{"total", responseObject.Data.Summary.Indiancases}, {"discharged", responseObject.Data.Summary.Discharged}}}}
+		{"summary", DBSummary{responseObject.Data.Summary.Indiancases, responseObject.Data.Summary.Discharged}}}
 	update := bson.D{{"$set", query}}
 	filter := bson.D{{"recordDate", today}}
 	res, err := Upsert(update, filter)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		log.Printf(err.Error())
+		return c.JSON(http.StatusInternalServerError, ErrorMessage{"Something went wrong while upserting"})
 	} else {
 		return c.JSON(http.StatusOK, res)
 	}
