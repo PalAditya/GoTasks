@@ -12,10 +12,11 @@ import (
 )
 
 func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
+	value := os.Getenv("PORT")
+	if len(value) == 0 {
+		return fallback
 	}
-	return fallback
+	return value
 }
 
 func main() {
