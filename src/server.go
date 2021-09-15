@@ -3,12 +3,20 @@ package main
 import (
 	"InShorts/src/apis"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	_ "InShorts/src/docs" // This line is necessary for go-swagger to find our docs!
 )
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 func main() {
 	e := echo.New()
@@ -18,5 +26,8 @@ func main() {
 	e.Use(middleware.CORS())
 	e.GET("/api", apis.Fetchcall)
 	e.GET("/data/:lat/:long", apis.LocResults)
-	e.Logger.Fatal(e.Start("localhost:1323"))
+
+	port := getEnv("PORT", "1323")
+
+	e.Logger.Fatal(e.Start("localhost:" + port))
 }
