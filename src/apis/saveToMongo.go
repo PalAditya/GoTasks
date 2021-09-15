@@ -9,65 +9,17 @@ import (
 	"net/http"
 	"time"
 
+	"InShorts/src/db"
+
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Response struct {
-	Success          bool `json:"success"`
-	Data             Data
-	LastRefreshed    string `json:"lastRefreshed"`
-	LastOriginUpdate string `json:"lastOriginUpdate"`
-}
-
-type Data struct {
-	Regional []Regional
-	Summary  Summary
-	X        map[string]interface{} `json:"-"`
-}
-
-type DBSummary struct {
-	Total      int64 `json:"total"`
-	Discharged int64 `json:"discharged"`
-}
-
-type ErrorMessage struct {
-	Message string `json:"message"`
-}
-
-type Summary struct {
-	Indiancases int64                  `json:"confirmedCasesIndian"`
-	Discharged  int64                  `json:"discharged"`
-	X           map[string]interface{} `json:"-"`
-}
-
-type Regional struct {
-	Loc           string `json:"loc"`
-	Indiancases   int64  `json:"confirmedCasesIndian"`
-	Foreigncases  int64  `json:"confirmedCasesForeign"`
-	Discharged    int64  `json:"discharged"`
-	Deaths        int64  `json:"deaths"`
-	Totalconfimed int64  `json:"totalConfirmed"`
-}
-
-func Conn() (client *mongo.Client) {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
 func Upsert(document bson.D, filter bson.D) (result *mongo.UpdateResult, e error) {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	collection := Conn().Database("testing").Collection("covid")
+	collection := db.Conn().Database("testing").Collection("covid")
 	opts := options.Update().SetUpsert(true)
 	res, err := collection.UpdateOne(ctx, filter, document, opts)
 	return res, err

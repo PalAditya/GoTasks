@@ -17,7 +17,7 @@ func Conn() (client *mongo.Client) {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	err = client.Connect(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err) // Without Mongo Connection, not much point in starting the app
 	}
 	return client
 }
