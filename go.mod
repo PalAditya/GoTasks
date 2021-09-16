@@ -47,6 +47,7 @@ require (
 	github.com/go-openapi/strfmt v0.20.2 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-openapi/validate v0.20.2 // indirect
+	github.com/go-redis/redis/v8 v8.11.3
 	github.com/go-swagger/go-swagger v0.27.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
@@ -76,4 +77,10 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/ini.v1 v1.63.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
 )

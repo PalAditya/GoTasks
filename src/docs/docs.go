@@ -16,7 +16,7 @@
 package docs
 
 import (
-	"InShorts/src/apis"
+	"InShorts/src/models"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -38,7 +38,7 @@ type ApiSucccessResponseWrapper struct {
 // swagger:response ErrorResponse
 type ApiErrorResponseWrapper struct {
 	// in:body
-	Body apis.ErrorMessage
+	Body models.ErrorMessage
 }
 
 // swagger:route GET /data/{lat}/{long} covid stateResults
@@ -63,12 +63,12 @@ type LongRequest struct {
 // swagger:response SuccessResponseForFetch
 type ApiSucccessResponseForFetchWrapper struct {
 	// in:body
-	Body apis.UserResponse
+	Body models.UserResponse
 }
 
 // Returns the state and the fact that it was not found within database
 // swagger:response ErrorResponseForFetch
 type ApiErrorResponseForFetchWrapper struct {
 	// in:body
-	Body apis.StateNotFound
+	Body models.StateNotFound
 }

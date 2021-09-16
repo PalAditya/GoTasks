@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"InShorts/src/db"
+	"InShorts/src/models"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,23 +42,24 @@ func Fetchcall(c echo.Context) error {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Print(err.Error())
+		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{"Unable to fetch latest Covid Data for ssaving"})
 	}
-	var responseObject Response
+	var responseObject models.Response
 	json.Unmarshal(bodyBytes, &responseObject)
 
 	today := time.Now().Format("2006-01-02")
 	query := bson.D{{"res", responseObject.Data.Regional},
 		{"lastUpdated", responseObject.LastRefreshed},            //Server update time for API
 		{"modifiedAt", time.Now().Format("2006-01-02 15:04:05")}, //last time we updated data on DB
-		{"recordDate", today},                                    //While not needed, we will store each day's records separately
-		{"summary", DBSummary{responseObject.Data.Summary.Indiancases, responseObject.Data.Summary.Discharged}}}
+		{"recordDate", today},
+		{"summary", models.DBSummary{responseObject.Data.Summary.Indiancases, responseObject.Data.Summary.Discharged}}}
 	update := bson.D{{"$set", query}}
 	filter := bson.D{{"recordDate", today}}
 	res, err := Upsert(update, filter)
 
 	if err != nil {
 		log.Printf(err.Error())
-		return c.JSON(http.StatusInternalServerError, ErrorMessage{"Something went wrong while upserting"})
+		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{"Something went wrong while upserting"})
 	} else {
 		return c.JSON(http.StatusOK, res)
 	}

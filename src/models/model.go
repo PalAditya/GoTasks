@@ -1,4 +1,4 @@
-package apis
+package models
 
 //structs for the /data/:lat/:long endpoint
 type GeoResponse struct {
@@ -67,4 +67,16 @@ type Regional struct {
 	Discharged    int64  `json:"discharged"`
 	Deaths        int64  `json:"deaths"`
 	Totalconfimed int64  `json:"totalConfirmed"`
+}
+
+type Rect struct {
+	TopX    float64
+	TopY    float64
+	BottomX float64
+	BottomY float64
+}
+
+type Point struct {
+	X float64
+	Y float64
 }

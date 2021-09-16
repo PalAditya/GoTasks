@@ -30,5 +30,5 @@ func main() {
 
 	port := getEnv("PORT", "1323")
 
-	e.Logger.Fatal(e.Start(":" + port))
+	e.Logger.Fatal(e.Start("localhost:" + port))
 }
