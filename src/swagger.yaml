@@ -6,7 +6,7 @@ definitions:
         type: string
         x-go-name: Message
     type: object
-    x-go-package: InShorts/src/apis
+    x-go-package: InShorts/src/models
   StateNotFound:
     properties:
       message:
@@ -16,7 +16,7 @@ definitions:
         type: string
         x-go-name: State
     type: object
-    x-go-package: InShorts/src/apis
+    x-go-package: InShorts/src/models
   UpdateResult:
     properties:
       MatchedCount:
@@ -51,14 +51,11 @@ definitions:
         type: integer
         x-go-name: TotalCasesInIndia
     type: object
-    x-go-package: InShorts/src/apis
+    x-go-package: InShorts/src/models
 host: localhost:1323
 info:
-  description: |-
-    Documentation of our APIs
-
-    Schemes: http/s
-  title: awesome.
+  description: Documentation of our APIs
+  title: covid.
   version: 1.0.0
 paths:
   /api:
@@ -118,4 +115,6 @@ responses:
       this data was fetched. It includes all cured cases and not just 'active' ones
     schema:
       $ref: '#/definitions/UserResponse'
+schemes:
+- https
 swagger: "2.0"

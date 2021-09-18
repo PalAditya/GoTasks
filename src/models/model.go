@@ -16,6 +16,11 @@ type StateNotFound struct {
 	Message string `json:"message"`
 }
 
+type MongoResponseWithId struct {
+	Id            string `bson:"_id"`
+	MongoResponse MongoResponse
+}
+
 type MongoResponse struct {
 	Region      []Regional `bson:"res"`
 	LastUpdated string     `bson:"lastUpdated"`
@@ -69,6 +74,13 @@ type Regional struct {
 	Totalconfimed int64  `json:"totalConfirmed"`
 }
 
+type ApiResponse struct {
+	LatestRecord string `json:"latestRecord"`
+	Inserted     bool   `json:"inserted"`
+	Modified     bool   `json:"modified"`
+}
+
+//Other models
 type Rect struct {
 	TopX    float64
 	TopY    float64
