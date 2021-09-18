@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"errors"
 	"log"
 	"time"
@@ -23,7 +22,7 @@ func RedisClient() *redis.Client {
 
 func SaveToCache(key string, value string, timeout int) {
 	conn := RedisClient()
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := GetCTX()
 	err := conn.Set(ctx, key, value, time.Duration(timeout)*time.Minute).Err()
 	if err != nil {
 		log.Println("Unable to save to cache")

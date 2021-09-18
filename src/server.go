@@ -2,8 +2,9 @@ package main
 
 import (
 	"InShorts/src/apis"
-	"net/http"
 	"os"
+
+	"github.com/labstack/echo-contrib/prometheus"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,10 +22,12 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+
+	//Middlewares
 	e.Use(middleware.CORS())
+	p := prometheus.NewPrometheus("echo", nil)
+	p.Use(e)
+
 	e.GET("/api", apis.Fetchcall)
 	e.GET("/data/:lat/:long", apis.LocResults)
 

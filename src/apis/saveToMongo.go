@@ -1,7 +1,6 @@
 package apis
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,7 +20,7 @@ import (
 )
 
 func Upsert(document bson.D, filter bson.D, today string) (result *mongo.UpdateResult, e error) {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := db.GetCTX()
 	collection := db.Conn().Database("testing").Collection("covid")
 	opts := options.Update().SetUpsert(true)
 	res, err := collection.UpdateOne(ctx, filter, document, opts)
@@ -53,6 +52,7 @@ func getIdForToday(today string) string {
 }
 
 func Fetchcall(c echo.Context) error {
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://api.rootnet.in/covid19-in/stats/latest", nil)
 	if err != nil {
@@ -68,30 +68,50 @@ func Fetchcall(c echo.Context) error {
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Print(err.Error())
-		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{"Unable to fetch latest Covid Data for ssaving"})
+		return c.JSON(http.StatusInternalServerError,
+			models.ErrorMessage{Message: "Unable to fetch latest Covid Data for ssaving"})
 	}
 	var responseObject models.Response
 	json.Unmarshal(bodyBytes, &responseObject)
 
 	today := time.Now().Format("2006-01-02")
-	query := bson.D{{"res", responseObject.Data.Regional},
-		{"lastUpdated", responseObject.LastRefreshed},            //Server update time for API
-		{"modifiedAt", time.Now().Format("2006-01-02 15:04:05")}, //last time we updated data on DB
-		{"recordDate", today},
-		{"summary", models.DBSummary{responseObject.Data.Summary.Indiancases, responseObject.Data.Summary.Discharged}}}
-	update := bson.D{{"$set", query}}
-	filter := bson.D{{"recordDate", today}}
+	query := bson.D{{Key: "res", Value: responseObject.Data.Regional},
+		{Key: "lastUpdated", Value: responseObject.LastRefreshed},            //Server update time for API
+		{Key: "modifiedAt", Value: time.Now().Format("2006-01-02 15:04:05")}, //last time we updated data on DB
+		{Key: "recordDate", Value: today},
+		{Key: "summary", Value: models.DBSummary{
+			Total:      responseObject.Data.Summary.Indiancases,
+			Discharged: responseObject.Data.Summary.Discharged}}}
+	update := bson.D{{Key: "$set", Value: query}}
+	filter := bson.D{{Key: "recordDate", Value: today}}
 	res, err := Upsert(update, filter, today)
 
 	if err != nil {
 		log.Println(err.Error())
-		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{"Something went wrong while upserting"})
+		return c.JSON(http.StatusInternalServerError,
+			models.ErrorMessage{Message: "Something went wrong while upserting"})
 	} else {
 		mongoId := getIdForToday(today)
 		if res.UpsertedCount == 1 {
-			return c.JSON(http.StatusOK, models.ApiResponse{mongoId, true, false})
+			if mongoId == "-" {
+				return c.JSON(http.StatusInternalServerError,
+					models.ErrorMessage{Message: "Unable to find Id of last upserted record"})
+			} else {
+				return c.JSON(http.StatusOK, models.ApiResponse{
+					LatestRecord: mongoId,
+					Inserted:     true,
+					Modified:     false})
+			}
 		} else {
-			return c.JSON(http.StatusOK, models.ApiResponse{mongoId, false, true})
+			if mongoId == "-" {
+				return c.JSON(http.StatusInternalServerError,
+					models.ErrorMessage{Message: "Unable to find Id of last upserted record"})
+			} else {
+				return c.JSON(http.StatusOK, models.ApiResponse{
+					LatestRecord: mongoId,
+					Inserted:     false,
+					Modified:     true})
+			}
 		}
 	}
 }

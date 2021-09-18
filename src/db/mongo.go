@@ -27,7 +27,7 @@ func Conn() (client *mongo.Client) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := GetCTX()
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatal(err) // Without Mongo Connection, not much point in starting the app
@@ -42,10 +42,10 @@ func GetCTX() context.Context {
 
 func FindLatestDoc() (cursor *mongo.Cursor, e error) {
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := GetCTX()
 	collection := Conn().Database("testing").Collection("covid")
 	opts := options.Find()
-	opts.SetSort(bson.D{{"recordDate", -1}})
+	opts.SetSort(bson.D{{Key: "recordDate", Value: -1}})
 	opts.SetLimit(1)
 	return collection.Find(ctx, bson.D{}, opts)
 }

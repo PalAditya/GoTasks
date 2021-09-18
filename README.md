@@ -42,18 +42,22 @@
         - If time >= 30 minutes, fetch from Mongo
         - If record in Mongo = Record in Redis, do nothing and return that result to user
         - Else, update the time of creation in Redis and return
-    - The above will lead to 'bursts' when all calls might concurrently bypass Redis, but it will probably be the most correct one (implemented, unused. See `func IsPresentInCacheWithTime(key string)` for details). However, we can't use it without understanding the update schedule of Mongo first. To see it in action, simply do the following changes:
-        - Replace line 109 in regionQuery.go with `db.SaveToCache(responseObject.Address.State, string(marshalled), db.LongTTL)`
-        - Change line 17 with `val, err := db.IsPresentInCacheWithTime(key)`
+    - The above will lead to 'bursts' when all calls might concurrently bypass Redis, but it will probably be the most correct one (implemented, unused. See `func IsPresentInCacheWithTime(key string)` for details). However, we can't use it without understanding the update schedule of Mongo first. To see it in action, switch to commit `8d9ad39d75810ef792cf270898419588e965957e` (Play with the timing of key expiry in Redis, 0 at that commit)
     - We are also using Redis to fetch the id of the latest doc in Mongo via using the `recordDate` as key since that won't change and is useful for `/api` endpoiint's response
     - Heroku has **not been** provisioned with the Redis add-on (because it won't accept my card :smile:)
 
 - **Extra Features**
-    - Middlewares used: CORS (We get nice logging and time taken from Heroku itself)
+    - Middlewares used: CORS (We get nice logging and time taken from Heroku itself), Prometheus
     - JWT based auth (Use `set auth=on` to enable)
-    - Grafana dashboard for the endpoints
+    - Grafana dashboard for the endpoints (Not exported to heroku. To view, one will have to download the dependencies himself/herself. Maybe can be included as a Docker script, but was unable to complete it in time. The grafana binaries are available [here](https://grafana.com/grafana/download?platform=windows) and prometheus binaries are [here](https://prometheus.io/download/))
+    - Dashboard View (Json present in SRC):
+    ![Status](https://user-images.githubusercontent.com/25523604/133895142-ae09a8fc-a891-4f8c-8ec0-35917a79b6b8.png)
+    ![Latencies](https://user-images.githubusercontent.com/25523604/133895182-cceb8868-4213-46c8-b095-c620f22781bd.png)
+
 
 
 ## Assumptions
 
 - We do not perform any data sanity on the value returned from the public API giving us the Covid metrics. This has a chance of data loss but we can't perform any real sanity without understanding their SLO/SLI etc. Assumption here is that their data will always be returned correctly. 
+- Context: We are passing around the same context everywhere with time limit of **10 seconds**! This can be catastrophic, especially since we never cancel the context (The cancel handler is discarded). However, it was done to keep the readability high. Absolutely can't be done in Production
+- Unit Testing and Dependency Injection: There is no real Dependency Injection used here, which makes unit testing extremely hard (or impossible). This can be considered a design flaw, but again done to minimize complexity. A test-driven design pattern can be seen at commit `abc`
