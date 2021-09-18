@@ -2,7 +2,7 @@
 //
 // Documentation of our APIs
 //
-//     Schemes: https
+//     Schemes: http
 //     BasePath: /
 //     Version: 1.0.0
 //     Host: localhost:1323
@@ -17,8 +17,6 @@ package docs
 
 import (
 	"InShorts/src/models"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // swagger:route GET /api covid saveToDB
@@ -27,11 +25,11 @@ import (
 //   200: SuccessResponse
 //   500: ErrorResponse
 
-// Uses the default Mongo Update Structure to show the update/insert count
+// Wraps the default Mongo Update Structure to show the id of the document and whether it was an insert or not. This seems like an Admin API so exposing the Id is fine
 // swagger:response SuccessResponse
 type ApiSucccessResponseWrapper struct {
 	// in:body
-	Body mongo.UpdateResult
+	Body models.ApiResponse
 }
 
 // Returns a generic error message since Mongo Update Errors should count as Internal Server Error

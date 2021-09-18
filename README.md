@@ -9,12 +9,50 @@
 
 ## Design
 
-- Task 1
+- **Task 1**
     - The first endpoint is simply called /api, which fetches the data using the public API available [here](https://api.rootnet.in/covid19-in/stats/latest) and then saves it to MongoDB
 
     - This endpoint can be called at any point and it will simply overwrite **that day's** data in the Database. This will create problems in case we have a multi region server deployment (In which case we will have to save date a normalized manner, say UTC), but the scope is limited to India
 
     - To solve the problem we just need 1 document in Mongo. However, I have stored it on a per-day basis to keep the option of exposing historical data open. To make that work, a per-hour/other granularity may have been better, but I discarded it as of now to make the design simpler.
+
+    - The API looks as follows (The Swagger docs can be viewed by using `swagger serve -F=swagger swagger.yaml`)
+
+    ![Structure](https://user-images.githubusercontent.com/25523604/133878816-91cc0c1c-4388-4924-814e-1a2c3621f278.png) ![Response](https://user-images.githubusercontent.com/25523604/133879285-2810b539-2f07-4a59-b211-94dd15b13971.png)
+
+- **Task 2**
+
+    - The second endpoint is **/data/{lat}/{long}**. First, it uses the reverse geocoding API provided by locationIQ to find the user's state. Next it fetches the latest document available in Mongo (going by `recordDate`) and iterates through the states to find the user's state and returns the results. It also returns a 404 resposne if the state can't be mapped to any state in DB (location outside India)
+
+    - Swagger representation is as below
+
+    ![Structure](https://user-images.githubusercontent.com/25523604/133879176-c6148bf5-f804-44c0-a66f-cb7c7d0a4973.png)
+    ![Response](https://user-images.githubusercontent.com/25523604/133879180-a1e68ba0-14a5-41d5-800d-8db137415c9f.png)
+
+- **Task 3**
+    - [App](https://cryptic-river-61900.herokuapp.com/api) has been deployed to Heroku. We did not use the Add-Ons for Heroku, but rather used Cloud Atlas MongoDB since the Heroku add-on was not under a free tier
+
+- **Task 4**
+    - Currently, the design on Redis is extremely simple. When the `/data/{lat}/{long}` endpoint is invoked, it still fetches the User's state from the reverse GeoCoding API and *then searches for that key in Redis*. So we have **(state, mongoDoc)** in Redis with a TTL of **30 minutes**
+    - There are several problems with the above idea, mainly the fact that there will be an update contention. Let's say the Mongo Data is also updated every half an hour - then we might show upto an hour's old data via Redis!
+    - A shorter update schedule for Mongo (say 5 minutes) ensures Redis will never lag too far behind.
+    - With authentication and authorization, caching can be greatly enhanced by using a combination of username, latitude and longitude which can allow us to skip the reverse geocoding call as well.
+    - We can also update Redis using the below alogorithm (without setting TTL of 30 minutes):
+        - Always add time of key creation/update to redis
+        - If time >= 30 minutes, fetch from Mongo
+        - If record in Mongo = Record in Redis, do nothing and return that result to user
+        - Else, update the time of creation in Redis and return
+    - The above will lead to 'bursts' when all calls might concurrently bypass Redis, but it will probably be the most correct one (implemented, unused. See `func IsPresentInCacheWithTime(key string)` for details). However, we can't use it without understanding the update schedule of Mongo first. To see it in action, simply do the following changes:
+        - Replace line 109 in regionQuery.go with `db.SaveToCache(responseObject.Address.State, string(marshalled), db.LongTTL)`
+        - Change line 17 with `val, err := db.IsPresentInCacheWithTime(key)`
+    - We are also using Redis to fetch the id of the latest doc in Mongo via using the `recordDate` as key since that won't change and is useful for `/api` endpoiint's response
+    - Heroku has **not been** provisioned with the Redis add-on (because it won't accept my card :smile:)
+
+- **Extra Features**
+    - Middlewares used: CORS (We get nice logging and time taken from Heroku itself)
+    - JWT based auth (Use `set auth=on` to enable)
+    - Grafana dashboard for the endpoints
+
 
 ## Assumptions
 

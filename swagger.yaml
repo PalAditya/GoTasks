@@ -1,0 +1,117 @@
+basePath: /
+definitions:
+  ApiResponse:
+    properties:
+      inserted:
+        type: boolean
+        x-go-name: Inserted
+      latestRecord:
+        type: string
+        x-go-name: LatestRecord
+      modified:
+        type: boolean
+        x-go-name: Modified
+    type: object
+    x-go-package: InShorts/src/models
+  ErrorMessage:
+    properties:
+      message:
+        type: string
+        x-go-name: Message
+    type: object
+    x-go-package: InShorts/src/models
+  StateNotFound:
+    properties:
+      message:
+        type: string
+        x-go-name: Message
+      state:
+        type: string
+        x-go-name: State
+    type: object
+    x-go-package: InShorts/src/models
+  UserResponse:
+    properties:
+      lastUpdated:
+        type: string
+        x-go-name: LastUpdated
+      state:
+        type: string
+        x-go-name: State
+      totalCasesByState:
+        format: int64
+        type: integer
+        x-go-name: TotalCasesByState
+      totalCasesInIndia:
+        format: int64
+        type: integer
+        x-go-name: TotalCasesInIndia
+    type: object
+    x-go-package: InShorts/src/models
+host: localhost:1323
+info:
+  description: Documentation of our APIs
+  title: covid.
+  version: 1.0.0
+paths:
+  /api:
+    get:
+      operationId: saveToDB
+      responses:
+        "200":
+          $ref: '#/responses/SuccessResponse'
+        "500":
+          $ref: '#/responses/ErrorResponse'
+      summary: Makes an API call to https://api.rootnet.in/covid19-in/stats/latest,
+        marshalls the data and persists in DB.
+      tags:
+      - covid
+  /data/{lat}/{long}:
+    get:
+      description: Takes in latitude and longitude as parameters and returns data
+        for that state, if within India
+      operationId: stateResults
+      parameters:
+      - in: path
+        name: lat
+        required: true
+        type: string
+        x-go-name: Latitude
+      - in: path
+        name: long
+        required: true
+        type: string
+        x-go-name: Longitude
+      responses:
+        "200":
+          $ref: '#/responses/SuccessResponseForFetch'
+        "404":
+          $ref: '#/responses/ErrorResponseForFetch'
+      tags:
+      - covid
+produces:
+- application/json
+responses:
+  ErrorResponse:
+    description: Returns a generic error message since Mongo Update Errors should
+      count as Internal Server Error
+    schema:
+      $ref: '#/definitions/ErrorMessage'
+  ErrorResponseForFetch:
+    description: Returns the state and the fact that it was not found within database
+    schema:
+      $ref: '#/definitions/StateNotFound'
+  SuccessResponse:
+    description: Wraps the default Mongo Update Structure to show the id of the document
+      and whether it was an insert or not. This seems like an Admin API so exposing
+      the Id is fine
+    schema:
+      $ref: '#/definitions/ApiResponse'
+  SuccessResponseForFetch:
+    description: Returns total Covid Cases for the state, in India, and the last time
+      this data was fetched. It includes all cured cases and not just 'active' ones
+    schema:
+      $ref: '#/definitions/UserResponse'
+schemes:
+- http
+swagger: "2.0"

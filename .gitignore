@@ -16,3 +16,6 @@ vendor/
 
 #Keys
 key.*
+
+#Tests - Need more time to write
+*test*.*

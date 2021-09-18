@@ -9,17 +9,24 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
 
 func isPresentInCache(key string) (userResponse models.UserResponse, e error) {
-	val, err := db.IsPresentInCache(key)
+	val, err := db.IsPresentInCacheWithTime(key)
 	if err == nil {
 		var resp models.UserResponse
 		json.Unmarshal([]byte(val), &resp)
 		return resp, err
+	} else if strings.Contains(err.Error(), "expiry") {
+		log.Println(err.Error())
+		var resp models.UserResponse
+		json.Unmarshal([]byte(val), &resp)
+		return resp, err // Only case in which we have error + response
 	} else {
+		log.Println(err.Error())
 		return models.UserResponse{}, err
 	}
 }
@@ -42,8 +49,7 @@ func getLatestDoc() (result models.MongoResponse, e error) {
 func retrieveKey() string {
 
 	if _, err := os.Stat("../key.txt"); err == nil { // Useful locally
-		fmt.Println("Hmm")
-		b, err := ioutil.ReadFile("../key.txt")
+		b, err := ioutil.ReadFile("../../key.txt")
 		if err == nil {
 			return string(b)
 		} else {
@@ -88,8 +94,8 @@ func LocResults(c echo.Context) error {
 
 	cache, err := isPresentInCache(responseObject.Address.State)
 
-	if cache != (models.UserResponse{}) {
-		log.Println("Fetching from cache")
+	if err == nil {
+		log.Println("Fetched from cache")
 		return c.JSON(http.StatusOK, cache) // Cache hit
 	}
 
@@ -105,7 +111,12 @@ func LocResults(c echo.Context) error {
 				resp := models.UserResponse{element.Loc,
 					element.Indiancases, res.Summary.Total, res.LastUpdated}
 				marshalled, _ := json.Marshal(resp)
-				db.SaveToCache(responseObject.Address.State, string(marshalled), 30)
+				if cache != resp {
+					log.Println("Updating Redis key " + responseObject.Address.State)
+					db.SaveToCache(responseObject.Address.State, string(marshalled), db.LongTTL) //Super long expiry
+				} else {
+					log.Println("No Mongo Update made - Skipping Redis update")
+				}
 				return c.JSON(http.StatusOK, resp)
 			}
 		}
