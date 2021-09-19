@@ -13,8 +13,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func isPresentInCache(key string) (userResponse models.UserResponse, e error) {
-	val, err := db.IsPresentInCache(key)
+func IsPresentInCache(key string, query func(string) (string, error)) (userResponse models.UserResponse, e error) {
+	val, err := query(key)
 	if err == nil {
 		var resp models.UserResponse
 		json.Unmarshal([]byte(val), &resp)
@@ -86,7 +86,7 @@ func LocResults(c echo.Context) error {
 	var responseObject models.GeoResponse
 	json.Unmarshal(bodyBytes, &responseObject)
 
-	cache, err := isPresentInCache(responseObject.Address.State)
+	cache, err := IsPresentInCache(responseObject.Address.State, db.IsPresentInCache)
 
 	if err == nil {
 		log.Println("Fetched from cache")

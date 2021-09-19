@@ -48,12 +48,10 @@
 
 - **Extra Features**
     - Middlewares used: CORS (We get nice logging and time taken from Heroku itself), Prometheus
-    - JWT based auth (Use `set auth=on` to enable)
     - Grafana dashboard for the endpoints (Not exported to heroku. To view, one will have to download the dependencies himself/herself. Maybe can be included as a Docker script, but was unable to complete it in time. The grafana binaries are available [here](https://grafana.com/grafana/download?platform=windows) and prometheus binaries are [here](https://prometheus.io/download/))
     - Dashboard View (Json present in SRC):
     ![Status](https://user-images.githubusercontent.com/25523604/133895142-ae09a8fc-a891-4f8c-8ec0-35917a79b6b8.png)
     ![Latencies](https://user-images.githubusercontent.com/25523604/133895182-cceb8868-4213-46c8-b095-c620f22781bd.png)
-
 
 
 ## Assumptions
