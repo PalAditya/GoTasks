@@ -34,7 +34,7 @@ func (externalClient OExternal) Upsert(document bson.D, filter bson.D, today str
 
 //GetIdForToday Gets the Mongo Id for the document that has report date as today, either from Redis or Mongo
 func (externalClient OExternal) GetIdForToday(today string) string {
-	dbMethod := &db.ODBExternal{}
+	dbMethod := db.ODBExternal{}
 	val, err := db.IsPresentInCache(today)
 	if err == nil {
 		return val

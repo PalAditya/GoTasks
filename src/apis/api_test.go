@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"InShorts/src/db"
 	"InShorts/src/models"
 	"bytes"
 	"encoding/json"
@@ -70,8 +71,8 @@ type MockedExternalObject struct {
 	mock.Mock
 }
 
-func (m *MockedExternalObject) GetLatestDoc() (models.MongoResponse, error) {
-	args := m.Called()
+func (m *MockedExternalObject) GetLatestDoc(dbMethod db.IDBExternal) (models.MongoResponse, error) {
+	args := m.Called(dbMethod)
 	return args.Get(0).(models.MongoResponse), args.Error(1)
 }
 
@@ -169,7 +170,7 @@ func TestMongoQuery_ActualQueryIfNotInCache(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewBufferString(string(marshalled)))}, nil)
 	testObj.On("IsPresentInCache", mock.AnythingOfType("string"), mock.AnythingOfType("func(string) (string, error)")).Return(
 		models.UserResponse{}, redis.Nil)
-	testObj.On("GetLatestDoc").Return(mongoResponse, nil)
+	testObj.On("GetLatestDoc", mock.AnythingOfType("db.ODBExternal")).Return(mongoResponse, nil)
 
 	// Setup
 	e := echo.New()
@@ -197,7 +198,7 @@ func TestMongoQuery_ActualQueryIfNotInCache_OusideIndia(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewBufferString(string(marshalled)))}, nil)
 	testObj.On("IsPresentInCache", mock.AnythingOfType("string"), mock.AnythingOfType("func(string) (string, error)")).Return(
 		models.UserResponse{}, redis.Nil)
-	testObj.On("GetLatestDoc").Return(mongoResponse, nil)
+	testObj.On("GetLatestDoc", mock.AnythingOfType("db.ODBExternal")).Return(mongoResponse, nil)
 
 	// Setup
 	e := echo.New()
@@ -375,12 +376,11 @@ func TestMongoUpsert_ActualUpsert_Insert500(t *testing.T) {
 	assert.Equal(strings.Trim(rec.Body.String(), "\r\n "), "{\"message\":\"Unable to find Id of last upserted record\"}")
 }
 
-/*func TestGetLatestDoc(t *testing.T) {
+func TestGetLatestDoc_MongoError(t *testing.T) {
 	testObj := new(MockedExternalDBObject)
 	assert := assert.New(t)
-	testObj.On("FindLatestDoc").Return(nil, errors.New("Unable to fetch doc"))
-	val, err := OExternal{}.GetLatestDoc()
+	testObj.On("FindLatestDoc").Return(&mongo.Cursor{}, errors.New("Unable to fetch doc"))
+	val, err := OExternal{}.GetLatestDoc(testObj)
 	assert.Equal(err.Error(), "Unable to fetch doc", "Error Messages Differ")
 	assert.Equal(val, models.MongoResponse{}, "Empty struct not returned on error")
-
-}*/
+}

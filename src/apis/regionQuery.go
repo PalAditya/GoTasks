@@ -25,9 +25,8 @@ func (externalClient OExternal) IsPresentInCache(key string, query func(string) 
 	}
 }
 
-func (external OExternal) GetLatestDoc() (result models.MongoResponse, e error) {
+func (external OExternal) GetLatestDoc(dbMethod db.IDBExternal) (result models.MongoResponse, e error) {
 
-	dbMethod := &db.ODBExternal{}
 	cursor, err := dbMethod.FindLatestDoc()
 	if err != nil {
 		log.Println("Unable to fetch latest doc from Mongo")
@@ -99,7 +98,8 @@ func LocResults(c echo.Context, externalClient IExternal) error {
 
 	//Continue
 	log.Printf("Key %s Not found in cache\n", responseObject.Address.State)
-	res, err := externalClient.GetLatestDoc()
+	dbMethod := db.ODBExternal{}
+	res, err := externalClient.GetLatestDoc(dbMethod)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{

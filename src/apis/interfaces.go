@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"InShorts/src/db"
 	"InShorts/src/models"
 	"fmt"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 )
 
 type IExternal interface {
-	GetLatestDoc() (models.MongoResponse, error)
+	GetLatestDoc(dbMethod db.IDBExternal) (models.MongoResponse, error)
 	MakeExternalHTTPRequest(client *http.Client, url string) (*http.Response, error)
 	SaveToCache(string, string, int)
 	IsPresentInCache(key string, query func(string) (string, error)) (models.UserResponse, error)
