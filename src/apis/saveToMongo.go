@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Upsert(document bson.D, filter bson.D, today string) (result *mongo.UpdateResult, e error) {
+func (externalClient OExternal) Upsert(document bson.D, filter bson.D, today string) (result *mongo.UpdateResult, e error) {
 	ctx := db.GetCTX()
 	collection := db.Conn().Database("testing").Collection("covid")
 	opts := options.Update().SetUpsert(true)
@@ -31,7 +31,7 @@ func Upsert(document bson.D, filter bson.D, today string) (result *mongo.UpdateR
 	return res, err
 }
 
-func getIdForToday(today string) string {
+func (externalClient OExternal) GetIdForToday(today string) string {
 	val, err := db.IsPresentInCache(today)
 	if err == nil {
 		return val
@@ -51,25 +51,21 @@ func getIdForToday(today string) string {
 	}
 }
 
-func Fetchcall(c echo.Context) error {
+func Fetchcall(c echo.Context, externalClient IExternal) error {
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://api.rootnet.in/covid19-in/stats/latest", nil)
+	resp, err := externalClient.MakeExternalHTTPRequest(client, "https://api.rootnet.in/covid19-in/stats/latest")
 	if err != nil {
 		fmt.Print(err.Error())
-	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Print(err.Error())
+		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{
+			Message: "We are having issues retrieving data, please check later"})
 	}
 	defer resp.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Print(err.Error())
 		return c.JSON(http.StatusInternalServerError,
-			models.ErrorMessage{Message: "Unable to fetch latest Covid Data for ssaving"})
+			models.ErrorMessage{Message: "Unable to fetch latest Covid Data for saving"})
 	}
 	var responseObject models.Response
 	json.Unmarshal(bodyBytes, &responseObject)
@@ -84,14 +80,14 @@ func Fetchcall(c echo.Context) error {
 			Discharged: responseObject.Data.Summary.Discharged}}}
 	update := bson.D{{Key: "$set", Value: query}}
 	filter := bson.D{{Key: "recordDate", Value: today}}
-	res, err := Upsert(update, filter, today)
+	res, err := externalClient.Upsert(update, filter, today)
 
 	if err != nil {
 		log.Println(err.Error())
 		return c.JSON(http.StatusInternalServerError,
 			models.ErrorMessage{Message: "Something went wrong while upserting"})
 	} else {
-		mongoId := getIdForToday(today)
+		mongoId := externalClient.GetIdForToday(today)
 		if res.UpsertedCount == 1 {
 			if mongoId == "-" {
 				return c.JSON(http.StatusInternalServerError,

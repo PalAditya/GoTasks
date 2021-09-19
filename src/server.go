@@ -28,8 +28,16 @@ func main() {
 	p := prometheus.NewPrometheus("echo", nil)
 	p.Use(e)
 
-	e.GET("/api", apis.Fetchcall)
-	e.GET("/data/:lat/:long", apis.LocResults)
+	externalClient := &apis.OExternal{}
+	handlerApi := func(c echo.Context) error {
+		return apis.Fetchcall(c, externalClient)
+	}
+	e.GET("/api", handlerApi)
+
+	handlerData := func(c echo.Context) error {
+		return apis.LocResults(c, externalClient)
+	}
+	e.GET("/data/:lat/:long", handlerData)
 
 	port := getEnv("PORT", "1323")
 

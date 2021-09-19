@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func IsPresentInCache(key string, query func(string) (string, error)) (userResponse models.UserResponse, e error) {
+func (externalClient OExternal) IsPresentInCache(key string, query func(string) (string, error)) (userResponse models.UserResponse, e error) {
 	val, err := query(key)
 	if err == nil {
 		var resp models.UserResponse
@@ -25,7 +25,7 @@ func IsPresentInCache(key string, query func(string) (string, error)) (userRespo
 	}
 }
 
-func getLatestDoc() (result models.MongoResponse, e error) {
+func (external *OExternal) GetLatestDoc() (result models.MongoResponse, e error) {
 
 	cursor, err := db.FindLatestDoc()
 	if err != nil {
@@ -61,32 +61,35 @@ func buildURL(lat string, long string) string {
 	return fmt.Sprintf(url, key, lat, long)
 }
 
-func LocResults(c echo.Context) error {
+func (externalClient OExternal) SaveToCache(key string, value string, timeout int) {
+	db.SaveToCache(key, value, timeout)
+}
+
+func LocResults(c echo.Context, externalClient IExternal) error {
 	client := &http.Client{}
 	lat := c.Param("lat")
 	long := c.Param("long")
 	url := buildURL(lat, long)
 	fmt.Println("Got URL as " + url)
 
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := externalClient.MakeExternalHTTPRequest(client, url)
+
 	if err != nil {
 		fmt.Print(err.Error())
-	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Print(err.Error())
+		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{
+			Message: "We are having issues retrieving data, please check later"})
 	}
 	defer resp.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Print(err.Error())
+		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{
+			Message: "We are having issues retrieving data, please check later"})
 	}
 	var responseObject models.GeoResponse
 	json.Unmarshal(bodyBytes, &responseObject)
 
-	cache, err := IsPresentInCache(responseObject.Address.State, db.IsPresentInCache)
+	cache, err := externalClient.IsPresentInCache(responseObject.Address.State, db.IsPresentInCache)
 
 	if err == nil {
 		log.Println("Fetched from cache")
@@ -95,7 +98,7 @@ func LocResults(c echo.Context) error {
 
 	//Continue
 	log.Printf("Key %s Not found in cache\n", responseObject.Address.State)
-	res, err := getLatestDoc()
+	res, err := externalClient.GetLatestDoc()
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorMessage{
@@ -109,7 +112,7 @@ func LocResults(c echo.Context) error {
 					TotalCasesInIndia: res.Summary.Total,
 					LastUpdated:       res.LastUpdated}
 				marshalled, _ := json.Marshal(resp)
-				db.SaveToCache(responseObject.Address.State, string(marshalled), 30)
+				externalClient.SaveToCache(responseObject.Address.State, string(marshalled), 30)
 				return c.JSON(http.StatusOK, resp)
 			}
 		}

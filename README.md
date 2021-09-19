@@ -52,10 +52,10 @@
     - Dashboard View (Json present in SRC):
     ![Status](https://user-images.githubusercontent.com/25523604/133895142-ae09a8fc-a891-4f8c-8ec0-35917a79b6b8.png)
     ![Latencies](https://user-images.githubusercontent.com/25523604/133895182-cceb8868-4213-46c8-b095-c620f22781bd.png)
+    - Unit tests have been added for the `apis` package with 33.9% coverage
 
 
 ## Assumptions
 
 - We do not perform any data sanity on the value returned from the public API giving us the Covid metrics. This has a chance of data loss but we can't perform any real sanity without understanding their SLO/SLI etc. Assumption here is that their data will always be returned correctly. 
 - Context: We are passing around the same context everywhere with time limit of **10 seconds**! This can be catastrophic, especially since we never cancel the context (The cancel handler is discarded). However, it was done to keep the readability high. Absolutely can't be done in Production
-- Unit Testing and Dependency Injection: There is no real Dependency Injection used here, which makes unit testing extremely hard (or impossible). This can be considered a design flaw, but again done to minimize complexity. A test-driven design pattern can be seen at commit `abc`
