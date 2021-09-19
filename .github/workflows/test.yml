@@ -20,5 +20,12 @@ jobs:
       uses: codecov/codecov-action@v2
       with:
         file: ./coverage.txt
+  goreport:
+    strategy:
+      matrix:
+        go-version: [1.17.x]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
     - name: Generate Go Report
       uses: creekorful/goreportcard-action@v1.0
