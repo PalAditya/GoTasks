@@ -19,6 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//Upsert upserts a document in Mongo with the filter crieteria being that report date is today
 func (externalClient OExternal) Upsert(document bson.D, filter bson.D, today string) (result *mongo.UpdateResult, e error) {
 	ctx := db.GetCTX()
 	collection := db.Conn().Database("testing").Collection("covid")
@@ -31,12 +32,14 @@ func (externalClient OExternal) Upsert(document bson.D, filter bson.D, today str
 	return res, err
 }
 
+//GetIdForToday Gets the Mongo Id for the document that has report date as today, either from Redis or Mongo
 func (externalClient OExternal) GetIdForToday(today string) string {
+	dbMethod := &db.ODBExternal{}
 	val, err := db.IsPresentInCache(today)
 	if err == nil {
 		return val
 	} else { // Not present in cache. Maybe Redis was re-started? Or it never got saved. Query and save
-		cursor, err := db.FindLatestDoc()
+		cursor, err := dbMethod.FindLatestDoc()
 		if err != nil {
 			log.Println("Unable to fetch latest doc from Mongo")
 			return "-"
@@ -51,6 +54,7 @@ func (externalClient OExternal) GetIdForToday(today string) string {
 	}
 }
 
+//FetchCall takes the responsibility of querying an external endpoint and saving the data to mongo datastore
 func Fetchcall(c echo.Context, externalClient IExternal) error {
 
 	client := &http.Client{}

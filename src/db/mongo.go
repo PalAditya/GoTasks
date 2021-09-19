@@ -40,7 +40,7 @@ func GetCTX() context.Context {
 	return ctx
 }
 
-func FindLatestDoc() (cursor *mongo.Cursor, e error) {
+func (external ODBExternal) FindLatestDoc() (cursor *mongo.Cursor, e error) {
 
 	ctx := GetCTX()
 	collection := Conn().Database("testing").Collection("covid")

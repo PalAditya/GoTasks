@@ -52,7 +52,7 @@
     - Dashboard View (Json present in SRC):
     ![Status](https://user-images.githubusercontent.com/25523604/133895142-ae09a8fc-a891-4f8c-8ec0-35917a79b6b8.png)
     ![Latencies](https://user-images.githubusercontent.com/25523604/133895182-cceb8868-4213-46c8-b095-c620f22781bd.png)
-    - Unit tests have been added for the `apis` package with 33.9% coverage
+    - Unit tests have been added for the `apis` package with `> 50%` coverage. Started working on the DB interactions too but it will take a bit more effort to mock them out
 
 
 ## Assumptions

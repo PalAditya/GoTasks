@@ -15,4 +15,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Test
-      run: go test ./...
+      run: go test ./... -coverprofile=coverage.txt -covermode=atomic
+    - name: Update Codecov metrics
+      uses: codecov/codecov-action@v2
+      with:
+        file: ./coverage.txt
+    - name: Generate Go Report
+      uses: creekorful/goreportcard-action@v1.0

@@ -25,9 +25,10 @@ func (externalClient OExternal) IsPresentInCache(key string, query func(string) 
 	}
 }
 
-func (external *OExternal) GetLatestDoc() (result models.MongoResponse, e error) {
+func (external OExternal) GetLatestDoc() (result models.MongoResponse, e error) {
 
-	cursor, err := db.FindLatestDoc()
+	dbMethod := &db.ODBExternal{}
+	cursor, err := dbMethod.FindLatestDoc()
 	if err != nil {
 		log.Println("Unable to fetch latest doc from Mongo")
 		return models.MongoResponse{}, err
