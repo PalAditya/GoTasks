@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/PalAditya/GoTasks)](https://goreportcard.com/report/PalAditya/GoTasks) [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/PalAditya/GoTasks/blob/master/LICENSE)
+
 # Problem Statement
 
 - Build an API that fetches the number of Covid-19 cases in each state and in India and persist it in MongoDB.
