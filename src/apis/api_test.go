@@ -342,6 +342,39 @@ func TestMongoUpsert_ActualUpsert_Insert(t *testing.T) {
 	assert.Equal(strings.Trim(rec.Body.String(), "\r\n "), string(marshalled))
 }
 
+func TestMongoUpsert_ActualUpsert_Insert500(t *testing.T) {
+
+	//Mocks
+	//create an instance of our test object
+	testObj := new(MockedExternalObject)
+
+	//On-Return pattern (When-Then in Mockito)
+	marshalled, _ := json.Marshal(response)
+	testObj.On("MakeExternalHTTPRequest", mock.AnythingOfType("*http.Client"),
+		mock.AnythingOfType("string")).Return(&http.Response{Status: "200",
+		Body: ioutil.NopCloser(bytes.NewBufferString(string(marshalled)))}, nil)
+	testObj.On("Upsert", mock.AnythingOfType("primitive.D"),
+		mock.AnythingOfType("primitive.D"), mock.AnythingOfType("string")).Return(
+		&mongo.UpdateResult{
+			MatchedCount:  0,
+			ModifiedCount: 0,
+			UpsertedCount: 1,
+			UpsertedID:    "6146b7082aba7e84729c2bd7",
+		}, nil)
+	testObj.On("GetIdForToday", mock.AnythingOfType("string")).Return("-")
+
+	// Setup
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api", nil)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	_ = Fetchcall(c, testObj)
+	assert := assert.New(t)
+	assert.Equal(rec.Code, 500, "Server did not throw error")
+	assert.Equal(strings.Trim(rec.Body.String(), "\r\n "), "{\"message\":\"Unable to find Id of last upserted record\"}")
+}
+
 /*func TestGetLatestDoc(t *testing.T) {
 	testObj := new(MockedExternalDBObject)
 	assert := assert.New(t)

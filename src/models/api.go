@@ -1,5 +1,6 @@
 package models
 
+//Response represents the structure to unmarshall the data from the external api `api.rootnet.com`
 type Response struct {
 	Success          bool `json:"success"`
 	Data             Data
